@@ -637,6 +637,71 @@
             flex-wrap: wrap;
         }
 
+        /* Session Timer Display */
+        .session-display {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 12px;
+            display: none;
+        }
+
+        .session-display.active { display: block; }
+
+        .session-timer {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--success);
+            font-family: monospace;
+        }
+
+        .session-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+
+        /* Notes Section */
+        .notes-section {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .notes-section.active { display: block; }
+
+        .notes-textarea {
+            width: 100%;
+            padding: 16px;
+            background: var(--dark-input);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 10px;
+            color: var(--text-light);
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s ease;
+        }
+
+        .notes-textarea:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .notes-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .notes-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
         .time-log { margin-top: 24px; }
 
         .log-entry {
@@ -658,6 +723,11 @@
 
         .log-entry .type.clock-in { color: var(--success); }
         .log-entry .type.clock-out { color: var(--warning); }
+
+        .log-entry .hours {
+            color: var(--cyan);
+            font-weight: bold;
+        }
 
         .stats-grid {
             display: grid;
@@ -707,6 +777,102 @@
             background: var(--gradient);
             border-radius: 4px;
             transition: width 0.5s ease;
+        }
+
+        /* Weekly Summary Styles */
+        .weekly-summary-card {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 768px) {
+            .weekly-summary-card { grid-column: span 1; }
+        }
+
+        .week-overview {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .week-overview {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .day-card {
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .day-card.today {
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .day-card.worked {
+            border-color: var(--success);
+        }
+
+        .day-card .day-name {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .day-card .day-hours {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text-light);
+            margin-top: 8px;
+        }
+
+        .day-card.worked .day-hours {
+            color: var(--success);
+        }
+
+        .day-card .day-status {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .week-totals {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        @media (max-width: 480px) {
+            .week-totals { grid-template-columns: 1fr; }
+        }
+
+        .week-total-item {
+            text-align: center;
+        }
+
+        .week-total-value {
+            font-size: 28px;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .week-total-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
         }
 
         .weekly-summary { margin-top: 16px; }
@@ -790,6 +956,23 @@
         .toast-title { font-weight: bold; margin-bottom: 4px; }
         .toast-message { font-size: 14px; color: var(--text-muted); }
 
+        /* Notes in table */
+        .notes-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .notes-cell:hover {
+            cursor: pointer;
+        }
+
+        .notes-preview {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
         @media (max-width: 600px) {
             .app-header { padding: 12px 16px; }
             .header-title h1 { font-size: 16px; }
@@ -854,6 +1037,7 @@
             <div class="admin-tabs">
                 <button class="admin-tab active" onclick="switchAdminTab('employees', this)">Employees</button>
                 <button class="admin-tab" onclick="switchAdminTab('timeEntries', this)">Time Entries</button>
+                <button class="admin-tab" onclick="switchAdminTab('weeklySummary', this)">Weekly Summary</button>
                 <button class="admin-tab" onclick="switchAdminTab('ptoRequests', this)">PTO Requests</button>
             </div>
 
@@ -866,11 +1050,15 @@
                     </div>
                     <div class="stat-card">
                         <div class="value" id="activeToday">0</div>
-                        <div class="label">Clocked In Today</div>
+                        <div class="label">Clocked In Now</div>
                     </div>
                     <div class="stat-card">
                         <div class="value" id="pendingPTO">0</div>
                         <div class="label">Pending PTO</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="totalWeekHours">0:00</div>
+                        <div class="label">Team Hours This Week</div>
                     </div>
                 </div>
 
@@ -887,6 +1075,7 @@
                                     <th>Email</th>
                                     <th>Role</th>
                                     <th>Status</th>
+                                    <th>Current Status</th>
                                     <th>Hours This Week</th>
                                     <th>Actions</th>
                                 </tr>
@@ -919,9 +1108,43 @@
                                     <th>Clock In</th>
                                     <th>Clock Out</th>
                                     <th>Total Hours</th>
+                                    <th>Notes</th>
                                 </tr>
                             </thead>
                             <tbody id="timeEntriesTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Summary Panel (Admin) -->
+            <div id="weeklySummaryPanel" class="admin-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Weekly Summary - All Employees</div>
+                        <div class="filter-bar" style="margin-bottom: 0;">
+                            <button class="btn btn-outline btn-sm" onclick="changeAdminWeek(-1)">← Previous Week</button>
+                            <span id="adminWeekLabel" style="padding: 8px 16px; color: var(--cyan);"></span>
+                            <button class="btn btn-outline btn-sm" onclick="changeAdminWeek(1)">Next Week →</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Mon</th>
+                                    <th>Tue</th>
+                                    <th>Wed</th>
+                                    <th>Thu</th>
+                                    <th>Fri</th>
+                                    <th>Sat</th>
+                                    <th>Sun</th>
+                                    <th>Total</th>
+                                    <th>Days Worked</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminWeeklySummaryTable"></tbody>
                         </table>
                     </div>
                 </div>
@@ -993,10 +1216,25 @@
                             <span id="statusText">Clocked Out</span>
                         </div>
                     </div>
+
+                    <!-- Live Session Timer -->
+                    <div class="session-display" id="sessionDisplay">
+                        <div class="session-timer" id="sessionTimer">00:00:00</div>
+                        <div class="session-label">Current Session Duration</div>
+                    </div>
+
                     <div class="clock-buttons">
                         <button class="btn btn-primary" id="clockInBtn" onclick="clockIn()">Clock In</button>
                         <button class="btn btn-outline" id="clockOutBtn" onclick="clockOut()" disabled>Clock Out</button>
                     </div>
+
+                    <!-- Notes Section -->
+                    <div class="notes-section" id="notesSection">
+                        <label class="form-label">Shift Notes</label>
+                        <textarea class="notes-textarea" id="shiftNotes" placeholder="Describe tasks completed, accomplishments, or any notes for this shift..."></textarea>
+                        <div class="notes-hint">Notes will be saved when you clock out</div>
+                    </div>
+
                     <div class="time-log" id="timeLog"></div>
                 </div>
 
@@ -1014,7 +1252,7 @@
                     </div>
                     <div class="progress-section">
                         <div class="progress-label">
-                            <span>Daily Progress</span>
+                            <span>Daily Progress (8hr goal)</span>
                             <span id="progressPercent">0%</span>
                         </div>
                         <div class="progress-bar">
@@ -1024,18 +1262,48 @@
                 </div>
 
                 <div class="card">
-                    <div class="card-title-sm">Weekly Overview</div>
+                    <div class="card-title-sm">This Week</div>
                     <div class="stats-grid">
                         <div class="stat-box">
                             <div class="stat-value" id="weekHours">0:00</div>
                             <div class="stat-label">Hours This Week</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-value" id="remainingHours">40:00</div>
-                            <div class="stat-label">Remaining</div>
+                            <div class="stat-value" id="daysWorked">0</div>
+                            <div class="stat-label">Days Worked</div>
                         </div>
                     </div>
-                    <div class="weekly-summary" id="weeklySummary"></div>
+                    <div class="progress-section">
+                        <div class="progress-label">
+                            <span>Weekly Progress (40hr goal)</span>
+                            <span id="weekProgressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="weekProgressFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly Summary Card -->
+                <div class="card weekly-summary-card">
+                    <div class="card-title-sm">Weekly Breakdown</div>
+                    <div class="week-overview" id="weekOverview">
+                        <!-- Days will be populated here -->
+                    </div>
+                    <div class="week-totals">
+                        <div class="week-total-item">
+                            <div class="week-total-value" id="weekTotalHours">0:00</div>
+                            <div class="week-total-label">Total Hours</div>
+                        </div>
+                        <div class="week-total-item">
+                            <div class="week-total-value" id="weekDaysWorked">0/5</div>
+                            <div class="week-total-label">Days Worked</div>
+                        </div>
+                        <div class="week-total-item">
+                            <div class="week-total-value" id="weekAvgHours">0:00</div>
+                            <div class="week-total-label">Avg Per Day</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card time-off-card">
@@ -1146,6 +1414,20 @@
         </div>
     </div>
 
+    <!-- Notes Modal -->
+    <div class="modal-overlay" id="notesModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <div class="modal-title">Shift Notes</div>
+                <button class="modal-close" onclick="closeNotesModal()">&times;</button>
+            </div>
+            <div id="notesModalContent" style="color: var(--text-light); white-space: pre-wrap;"></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeNotesModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast">
         <div class="toast-title" id="toastTitle">Success</div>
@@ -1161,26 +1443,36 @@
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // State persistence keys
+        const STORAGE_KEYS = {
+            USER: 'uscargo_user',
+            CLOCK_STATE: 'uscargo_clock_state'
+        };
+
         let currentUser = null;
         let allEmployees = [];
+        let adminWeekOffset = 0;
+
         let employeeState = {
             isClockedIn: false,
             clockInTime: null,
             activeEntryId: null,
             todayMinutes: 0,
-            weeklyMinutes: {},
-            sessionInterval: null
+            weeklyData: {},
+            sessionInterval: null,
+            clockInterval: null
         };
 
         // ============================================
         // INITIALIZATION
         // ============================================
         document.addEventListener('DOMContentLoaded', async () => {
-            setInterval(updateClock, 1000);
+            // Start clock immediately
             updateClock();
+            setInterval(updateClock, 1000);
 
             // Check for saved session
-            const savedUser = localStorage.getItem('usCargoUser');
+            const savedUser = localStorage.getItem(STORAGE_KEYS.USER);
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
                 await initializeApp();
@@ -1192,8 +1484,24 @@
 
         async function initializeApp() {
             try {
+                // Verify user still exists and is active
+                const { data: user, error } = await supabase
+                    .from('employees')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .eq('status', 'active')
+                    .single();
+
+                if (error || !user) {
+                    logout();
+                    return;
+                }
+
+                currentUser = user;
+                localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+
                 if (currentUser.role === 'admin') {
-                    showAdminView();
+                    await showAdminView();
                 } else {
                     await showEmployeeView();
                 }
@@ -1233,7 +1541,7 @@
                 }
 
                 currentUser = data;
-                localStorage.setItem('usCargoUser', JSON.stringify(data));
+                localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data));
                 document.getElementById('loginError').classList.remove('show');
 
                 await initializeApp();
@@ -1249,15 +1557,17 @@
 
         function logout() {
             currentUser = null;
-            localStorage.removeItem('usCargoUser');
+            localStorage.removeItem(STORAGE_KEYS.USER);
+            localStorage.removeItem(STORAGE_KEYS.CLOCK_STATE);
             stopSessionTimer();
             employeeState = {
                 isClockedIn: false,
                 clockInTime: null,
                 activeEntryId: null,
                 todayMinutes: 0,
-                weeklyMinutes: {},
-                sessionInterval: null
+                weeklyData: {},
+                sessionInterval: null,
+                clockInterval: null
             };
             showView('loginView');
             document.getElementById('loginEmail').value = '';
@@ -1296,6 +1606,7 @@
 
             if (tab === 'timeEntries') await loadTimeEntries();
             if (tab === 'ptoRequests') await loadPTORequests();
+            if (tab === 'weeklySummary') await loadAdminWeeklySummary();
         }
 
         async function loadAdminData() {
@@ -1307,16 +1618,13 @@
             
             allEmployees = employees || [];
 
-            // Stats
             const nonAdmins = allEmployees.filter(e => e.role !== 'admin');
             document.getElementById('totalEmployees').textContent = nonAdmins.length;
 
-            // Clocked in today
-            const today = new Date().toISOString().split('T')[0];
+            // Currently clocked in
             const { data: activeEntries } = await supabase
                 .from('time_entries')
                 .select('*')
-                .gte('clock_in', today)
                 .is('clock_out', null);
             
             document.getElementById('activeToday').textContent = (activeEntries || []).length;
@@ -1329,8 +1637,22 @@
             
             document.getElementById('pendingPTO').textContent = (pendingPTO || []).length;
 
-            // Render employees table
-            await renderEmployeesTable(nonAdmins);
+            // Total team hours this week
+            const startOfWeek = getStartOfWeek();
+            const { data: weekEntries } = await supabase
+                .from('time_entries')
+                .select('*')
+                .gte('clock_in', startOfWeek.toISOString())
+                .not('clock_out', 'is', null);
+
+            let totalWeekMins = 0;
+            (weekEntries || []).forEach(e => {
+                totalWeekMins += Math.floor((new Date(e.clock_out) - new Date(e.clock_in)) / 60000);
+            });
+            document.getElementById('totalWeekHours').textContent = formatMinutes(totalWeekMins);
+
+            // Render employees table with current status
+            await renderEmployeesTable(nonAdmins, activeEntries || []);
 
             // Populate filter
             const filterSelect = document.getElementById('filterEmployee');
@@ -1338,15 +1660,14 @@
                 nonAdmins.map(e => `<option value="${e.id}">${e.first_name} ${e.last_name}</option>`).join('');
         }
 
-        async function renderEmployeesTable(employees) {
+        async function renderEmployeesTable(employees, activeEntries) {
             const tbody = document.getElementById('employeesTable');
 
             if (employees.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No employees yet.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No employees yet.</td></tr>';
                 return;
             }
 
-            // Get week hours for each employee
             const startOfWeek = getStartOfWeek();
             const { data: weekEntries } = await supabase
                 .from('time_entries')
@@ -1360,21 +1681,93 @@
                 hoursMap[entry.employee_id] = (hoursMap[entry.employee_id] || 0) + mins;
             });
 
-            tbody.innerHTML = employees.map(emp => `
-                <tr>
-                    <td><strong>${emp.first_name} ${emp.last_name}</strong></td>
-                    <td>${emp.email}</td>
-                    <td style="text-transform:capitalize;">${emp.role}</td>
-                    <td><span class="badge badge-${emp.status}">${emp.status}</span></td>
-                    <td>${formatMinutes(hoursMap[emp.id] || 0)}</td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="btn btn-outline btn-sm" onclick="editEmployee(${emp.id})">Edit</button>
-                            <button class="btn btn-danger btn-sm" onclick="confirmDeleteEmployee(${emp.id})">Delete</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            const activeMap = {};
+            activeEntries.forEach(e => activeMap[e.employee_id] = e);
+
+            tbody.innerHTML = employees.map(emp => {
+                const isActive = activeMap[emp.id];
+                const activeTime = isActive ? formatMinutes(Math.floor((new Date() - new Date(isActive.clock_in)) / 60000)) : '';
+                
+                return `
+                    <tr>
+                        <td><strong>${emp.first_name} ${emp.last_name}</strong></td>
+                        <td>${emp.email}</td>
+                        <td style="text-transform:capitalize;">${emp.role}</td>
+                        <td><span class="badge badge-${emp.status}">${emp.status}</span></td>
+                        <td>${isActive ? `<span class="badge badge-active">Clocked In (${activeTime})</span>` : '<span class="badge badge-inactive">Clocked Out</span>'}</td>
+                        <td>${formatMinutes(hoursMap[emp.id] || 0)}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn btn-outline btn-sm" onclick="editEmployee(${emp.id})">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="confirmDeleteEmployee(${emp.id})">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Admin Weekly Summary
+        async function loadAdminWeeklySummary() {
+            const startOfWeek = getStartOfWeek(adminWeekOffset);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(endOfWeek.getDate() + 7);
+
+            document.getElementById('adminWeekLabel').textContent = 
+                `${startOfWeek.toLocaleDateString()} - ${new Date(endOfWeek - 1).toLocaleDateString()}`;
+
+            const nonAdmins = allEmployees.filter(e => e.role !== 'admin');
+
+            const { data: entries } = await supabase
+                .from('time_entries')
+                .select('*')
+                .gte('clock_in', startOfWeek.toISOString())
+                .lt('clock_in', endOfWeek.toISOString())
+                .not('clock_out', 'is', null);
+
+            // Build hours by employee and day
+            const hoursMap = {};
+            (entries || []).forEach(entry => {
+                const empId = entry.employee_id;
+                const dayOfWeek = new Date(entry.clock_in).getDay();
+                const mins = Math.floor((new Date(entry.clock_out) - new Date(entry.clock_in)) / 60000);
+                
+                if (!hoursMap[empId]) hoursMap[empId] = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+                hoursMap[empId][dayOfWeek] += mins;
+            });
+
+            const tbody = document.getElementById('adminWeeklySummaryTable');
+            
+            if (nonAdmins.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);">No employees.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = nonAdmins.map(emp => {
+                const hours = hoursMap[emp.id] || { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+                const total = Object.values(hours).reduce((a, b) => a + b, 0);
+                const daysWorked = Object.values(hours).filter(h => h > 0).length;
+
+                return `
+                    <tr>
+                        <td><strong>${emp.first_name} ${emp.last_name}</strong></td>
+                        <td>${hours[1] > 0 ? formatMinutes(hours[1]) : '-'}</td>
+                        <td>${hours[2] > 0 ? formatMinutes(hours[2]) : '-'}</td>
+                        <td>${hours[3] > 0 ? formatMinutes(hours[3]) : '-'}</td>
+                        <td>${hours[4] > 0 ? formatMinutes(hours[4]) : '-'}</td>
+                        <td>${hours[5] > 0 ? formatMinutes(hours[5]) : '-'}</td>
+                        <td>${hours[6] > 0 ? formatMinutes(hours[6]) : '-'}</td>
+                        <td>${hours[0] > 0 ? formatMinutes(hours[0]) : '-'}</td>
+                        <td style="color: var(--cyan); font-weight: bold;">${formatMinutes(total)}</td>
+                        <td>${daysWorked}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function changeAdminWeek(direction) {
+            adminWeekOffset += direction;
+            loadAdminWeeklySummary();
         }
 
         function openAddEmployeeModal() {
@@ -1426,7 +1819,6 @@
 
             try {
                 if (id) {
-                    // Update
                     if (password) employeeData.password = password;
                     
                     const { error } = await supabase
@@ -1437,7 +1829,6 @@
                     if (error) throw error;
                     showToast('Employee Updated', `${employeeData.first_name} ${employeeData.last_name} has been updated.`);
                 } else {
-                    // Insert
                     if (!password) {
                         showToast('Error', 'Password is required for new employees.', true);
                         return;
@@ -1516,7 +1907,7 @@
             const tbody = document.getElementById('timeEntriesTable');
 
             if (!entries || entries.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">No time entries found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No time entries found.</td></tr>';
                 return;
             }
 
@@ -1524,18 +1915,32 @@
                 const empName = entry.employees ? `${entry.employees.first_name} ${entry.employees.last_name}` : 'Unknown';
                 const clockIn = new Date(entry.clock_in);
                 const clockOut = entry.clock_out ? new Date(entry.clock_out) : null;
-                const totalMins = clockOut ? Math.floor((clockOut - clockIn) / 60000) : 0;
+                const totalMins = clockOut ? Math.floor((clockOut - clockIn) / 60000) : Math.floor((new Date() - clockIn) / 60000);
+                const hasNotes = entry.notes && entry.notes.trim();
 
                 return `
                     <tr>
                         <td>${empName}</td>
                         <td>${clockIn.toLocaleDateString()}</td>
                         <td>${clockIn.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</td>
-                        <td>${clockOut ? clockOut.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : '<span class="badge badge-active">Active</span>'}</td>
-                        <td>${clockOut ? formatMinutes(totalMins) : '-'}</td>
+                        <td>${clockOut ? clockOut.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : `<span class="badge badge-active">Active (${formatMinutes(totalMins)})</span>`}</td>
+                        <td>${formatMinutes(totalMins)}</td>
+                        <td class="notes-cell" ${hasNotes ? `onclick="showNotes('${encodeURIComponent(entry.notes)}')"` : ''}>
+                            ${hasNotes ? `<span class="notes-preview" title="Click to view">📝 ${entry.notes.substring(0, 30)}${entry.notes.length > 30 ? '...' : ''}</span>` : '<span style="color: var(--text-muted);">-</span>'}
+                        </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        function showNotes(encodedNotes) {
+            const notes = decodeURIComponent(encodedNotes);
+            document.getElementById('notesModalContent').textContent = notes;
+            document.getElementById('notesModal').classList.add('show');
+        }
+
+        function closeNotesModal() {
+            document.getElementById('notesModal').classList.remove('show');
         }
 
         async function exportTimeEntries() {
@@ -1550,7 +1955,7 @@
             }
 
             const csv = [
-                ['Employee', 'Date', 'Clock In', 'Clock Out', 'Total Hours'].join(','),
+                ['Employee', 'Date', 'Clock In', 'Clock Out', 'Total Hours', 'Notes'].join(','),
                 ...entries.map(entry => {
                     const empName = entry.employees ? `${entry.employees.first_name} ${entry.employees.last_name}` : 'Unknown';
                     const clockIn = new Date(entry.clock_in);
@@ -1562,7 +1967,8 @@
                         clockIn.toLocaleDateString(),
                         clockIn.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
                         clockOut ? clockOut.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : 'Active',
-                        clockOut ? formatMinutes(totalMins) : '-'
+                        clockOut ? formatMinutes(totalMins) : '-',
+                        `"${(entry.notes || '').replace(/"/g, '""')}"`
                     ].join(',');
                 })
             ].join('\n');
@@ -1647,7 +2053,7 @@
         // ============================================
         async function initEmployeeView() {
             await loadEmployeeData();
-            updateWeeklySummary();
+            updateWeeklyOverview();
             setMinDates();
 
             document.getElementById('startDate').addEventListener('change', calculateDays);
@@ -1665,19 +2071,52 @@
                 .gte('clock_in', today)
                 .order('clock_in', { ascending: true });
 
-            // Check for active entry
+            // Check for active entry (both from DB and local state)
             const activeEntry = (todayEntries || []).find(e => !e.clock_out);
+            
+            // Also check local storage for reliability
+            const savedState = localStorage.getItem(STORAGE_KEYS.CLOCK_STATE);
+            let localState = savedState ? JSON.parse(savedState) : null;
+
             if (activeEntry) {
                 employeeState.isClockedIn = true;
                 employeeState.clockInTime = new Date(activeEntry.clock_in);
                 employeeState.activeEntryId = activeEntry.id;
+                
+                // Save to local storage for persistence
+                localStorage.setItem(STORAGE_KEYS.CLOCK_STATE, JSON.stringify({
+                    isClockedIn: true,
+                    clockInTime: activeEntry.clock_in,
+                    activeEntryId: activeEntry.id,
+                    odayId: currentUser.id
+                }));
+
                 updateClockStatus(true);
                 startSessionTimer();
+            } else if (localState && localState.isClockedIn && localState.odayId === currentUser.id) {
+                // Check if local state is stale (entry was clocked out elsewhere)
+                const { data: checkEntry } = await supabase
+                    .from('time_entries')
+                    .select('*')
+                    .eq('id', localState.activeEntryId)
+                    .single();
+
+                if (checkEntry && !checkEntry.clock_out) {
+                    employeeState.isClockedIn = true;
+                    employeeState.clockInTime = new Date(localState.clockInTime);
+                    employeeState.activeEntryId = localState.activeEntryId;
+                    updateClockStatus(true);
+                    startSessionTimer();
+                } else {
+                    // Clean up stale state
+                    localStorage.removeItem(STORAGE_KEYS.CLOCK_STATE);
+                    updateClockStatus(false);
+                }
             } else {
                 updateClockStatus(false);
             }
 
-            // Calculate today's minutes
+            // Calculate today's completed minutes
             employeeState.todayMinutes = (todayEntries || [])
                 .filter(e => e.clock_out)
                 .reduce((sum, e) => sum + Math.floor((new Date(e.clock_out) - new Date(e.clock_in)) / 60000), 0);
@@ -1686,18 +2125,21 @@
             const logContainer = document.getElementById('timeLog');
             logContainer.innerHTML = '';
             (todayEntries || []).forEach(entry => {
-                addLogEntryToDOM('in', new Date(entry.clock_in));
-                if (entry.clock_out) {
-                    addLogEntryToDOM('out', new Date(entry.clock_out));
+                const clockIn = new Date(entry.clock_in);
+                const clockOut = entry.clock_out ? new Date(entry.clock_out) : null;
+                const duration = clockOut ? Math.floor((clockOut - clockIn) / 60000) : null;
+                addLogEntryToDOM('in', clockIn);
+                if (clockOut) {
+                    addLogEntryToDOM('out', clockOut, duration);
                 }
             });
 
             // Weekly data
-            await calculateWeeklyMinutes();
+            await calculateWeeklyData();
             updateStats();
         }
 
-        async function calculateWeeklyMinutes() {
+        async function calculateWeeklyData() {
             const startOfWeek = getStartOfWeek();
             
             const { data: weekEntries } = await supabase
@@ -1707,14 +2149,54 @@
                 .gte('clock_in', startOfWeek.toISOString())
                 .not('clock_out', 'is', null);
 
-            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-            employeeState.weeklyMinutes = { monday: 0, tuesday: 0, wednesday: 0, thursday: 0, friday: 0, saturday: 0, sunday: 0 };
+            // Reset weekly data
+            employeeState.weeklyData = {
+                0: { hours: 0, worked: false }, // Sunday
+                1: { hours: 0, worked: false }, // Monday
+                2: { hours: 0, worked: false },
+                3: { hours: 0, worked: false },
+                4: { hours: 0, worked: false },
+                5: { hours: 0, worked: false },
+                6: { hours: 0, worked: false }  // Saturday
+            };
 
             (weekEntries || []).forEach(e => {
-                const day = days[new Date(e.clock_in).getDay()];
+                const day = new Date(e.clock_in).getDay();
                 const mins = Math.floor((new Date(e.clock_out) - new Date(e.clock_in)) / 60000);
-                employeeState.weeklyMinutes[day] += mins;
+                employeeState.weeklyData[day].hours += mins;
+                employeeState.weeklyData[day].worked = true;
             });
+        }
+
+        function updateWeeklyOverview() {
+            const container = document.getElementById('weekOverview');
+            const today = new Date().getDay();
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const workDays = [1, 2, 3, 4, 5]; // Mon-Fri
+
+            container.innerHTML = workDays.map(dayNum => {
+                const data = employeeState.weeklyData[dayNum] || { hours: 0, worked: false };
+                const isToday = dayNum === today;
+                const worked = data.hours > 0;
+
+                return `
+                    <div class="day-card ${isToday ? 'today' : ''} ${worked ? 'worked' : ''}">
+                        <div class="day-name">${dayNames[dayNum]}</div>
+                        <div class="day-hours">${worked ? formatMinutes(data.hours) : '-'}</div>
+                        <div class="day-status">${isToday ? 'Today' : (worked ? '✓' : '')}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Update totals
+            const totalMins = Object.values(employeeState.weeklyData).reduce((sum, d) => sum + d.hours, 0);
+            const daysWorked = Object.values(employeeState.weeklyData).filter(d => d.worked).length;
+            const avgMins = daysWorked > 0 ? Math.round(totalMins / daysWorked) : 0;
+
+            document.getElementById('weekTotalHours').textContent = formatMinutes(totalMins);
+            document.getElementById('weekDaysWorked').textContent = `${daysWorked}/5`;
+            document.getElementById('weekAvgHours').textContent = formatMinutes(avgMins);
+            document.getElementById('daysWorked').textContent = daysWorked;
         }
 
         function updateClock() {
@@ -1729,6 +2211,7 @@
 
             const clockInBtn = document.getElementById('clockInBtn');
             clockInBtn.disabled = true;
+            clockInBtn.textContent = 'Clocking In...';
 
             try {
                 const now = new Date();
@@ -1748,6 +2231,14 @@
                 employeeState.clockInTime = now;
                 employeeState.activeEntryId = data.id;
 
+                // Save to localStorage for persistence
+                localStorage.setItem(STORAGE_KEYS.CLOCK_STATE, JSON.stringify({
+                    isClockedIn: true,
+                    clockInTime: now.toISOString(),
+                    activeEntryId: data.id,
+                    odayId: currentUser.id
+                }));
+
                 updateClockStatus(true);
                 addLogEntryToDOM('in', now);
                 startSessionTimer();
@@ -1756,9 +2247,11 @@
 
             } catch (error) {
                 console.error('Clock in error:', error);
-                showToast('Error', 'Failed to clock in', true);
-                clockInBtn.disabled = false;
+                showToast('Error', 'Failed to clock in. Please try again.', true);
             }
+
+            clockInBtn.disabled = false;
+            clockInBtn.textContent = 'Clock In';
         }
 
         async function clockOut() {
@@ -1766,13 +2259,18 @@
 
             const clockOutBtn = document.getElementById('clockOutBtn');
             clockOutBtn.disabled = true;
+            clockOutBtn.textContent = 'Clocking Out...';
 
             try {
                 const now = new Date();
+                const notes = document.getElementById('shiftNotes').value.trim();
 
                 const { error } = await supabase
                     .from('time_entries')
-                    .update({ clock_out: now.toISOString() })
+                    .update({ 
+                        clock_out: now.toISOString(),
+                        notes: notes || null
+                    })
                     .eq('id', employeeState.activeEntryId);
 
                 if (error) throw error;
@@ -1780,27 +2278,38 @@
                 const sessionMinutes = Math.floor((now - employeeState.clockInTime) / 60000);
                 employeeState.todayMinutes += sessionMinutes;
 
-                const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                const dayName = days[now.getDay()];
-                employeeState.weeklyMinutes[dayName] += sessionMinutes;
+                const dayOfWeek = now.getDay();
+                if (!employeeState.weeklyData[dayOfWeek]) {
+                    employeeState.weeklyData[dayOfWeek] = { hours: 0, worked: false };
+                }
+                employeeState.weeklyData[dayOfWeek].hours += sessionMinutes;
+                employeeState.weeklyData[dayOfWeek].worked = true;
 
                 employeeState.isClockedIn = false;
                 employeeState.clockInTime = null;
                 employeeState.activeEntryId = null;
 
+                // Clear local storage
+                localStorage.removeItem(STORAGE_KEYS.CLOCK_STATE);
+
+                // Clear notes
+                document.getElementById('shiftNotes').value = '';
+
                 updateClockStatus(false);
-                addLogEntryToDOM('out', now);
+                addLogEntryToDOM('out', now, sessionMinutes);
                 stopSessionTimer();
                 updateStats();
-                updateWeeklySummary();
+                updateWeeklyOverview();
 
                 showToast('Clocked Out', `Session: ${formatMinutes(sessionMinutes)}. Total today: ${formatMinutes(employeeState.todayMinutes)}`);
 
             } catch (error) {
                 console.error('Clock out error:', error);
-                showToast('Error', 'Failed to clock out', true);
-                clockOutBtn.disabled = false;
+                showToast('Error', 'Failed to clock out. Please try again.', true);
             }
+
+            clockOutBtn.disabled = false;
+            clockOutBtn.textContent = 'Clock Out';
         }
 
         function updateClockStatus(isClockedIn) {
@@ -1808,6 +2317,8 @@
             const statusText = document.getElementById('statusText');
             const clockInBtn = document.getElementById('clockInBtn');
             const clockOutBtn = document.getElementById('clockOutBtn');
+            const sessionDisplay = document.getElementById('sessionDisplay');
+            const notesSection = document.getElementById('notesSection');
 
             if (isClockedIn) {
                 indicator.classList.add('clocked-in');
@@ -1816,6 +2327,8 @@
                 statusText.style.color = 'var(--success)';
                 clockInBtn.disabled = true;
                 clockOutBtn.disabled = false;
+                sessionDisplay.classList.add('active');
+                notesSection.classList.add('active');
             } else {
                 indicator.classList.remove('clocked-in');
                 indicator.classList.add('clocked-out');
@@ -1823,18 +2336,29 @@
                 statusText.style.color = 'var(--text-muted)';
                 clockInBtn.disabled = false;
                 clockOutBtn.disabled = true;
+                sessionDisplay.classList.remove('active');
+                notesSection.classList.remove('active');
             }
         }
 
-        function addLogEntryToDOM(type, time) {
+        function addLogEntryToDOM(type, time, duration = null) {
             const logContainer = document.getElementById('timeLog');
             const entry = document.createElement('div');
             entry.className = 'log-entry';
+            
+            let durationHtml = '';
+            if (type === 'out' && duration !== null) {
+                durationHtml = `<span class="hours">${formatMinutes(duration)}</span>`;
+            }
+
             entry.innerHTML = `
                 <div class="type ${type === 'in' ? 'clock-in' : 'clock-out'}">
                     ${type === 'in' ? '▶' : '■'} ${type === 'in' ? 'Clocked In' : 'Clocked Out'}
                 </div>
-                <div class="time">${formatTime(time)}</div>
+                <div>
+                    ${durationHtml}
+                    <span class="time" style="margin-left: 12px;">${formatTime(time)}</span>
+                </div>
             `;
             logContainer.insertBefore(entry, logContainer.firstChild);
         }
@@ -1850,14 +2374,25 @@
                 employeeState.sessionInterval = null;
             }
             document.getElementById('sessionTime').textContent = '0:00';
+            document.getElementById('sessionTimer').textContent = '00:00:00';
         }
 
         function updateSessionTime() {
             if (!employeeState.clockInTime) return;
 
             const now = new Date();
-            const sessionMinutes = Math.floor((now - employeeState.clockInTime) / 60000);
+            const diffMs = now - employeeState.clockInTime;
+            const sessionMinutes = Math.floor(diffMs / 60000);
+            
+            // Update small stat
             document.getElementById('sessionTime').textContent = formatMinutes(sessionMinutes);
+            
+            // Update large timer display (HH:MM:SS format)
+            const hours = Math.floor(diffMs / 3600000);
+            const mins = Math.floor((diffMs % 3600000) / 60000);
+            const secs = Math.floor((diffMs % 60000) / 1000);
+            document.getElementById('sessionTimer').textContent = 
+                `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 
             updateStats(sessionMinutes);
         }
@@ -1868,33 +2403,21 @@
 
             document.getElementById('todayHours').textContent = formatMinutes(totalToday);
 
+            // Daily progress
             const progress = Math.min((totalToday / targetMinutes) * 100, 100);
             document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
             document.getElementById('progressFill').style.width = progress + '%';
 
-            const weekTotal = Object.values(employeeState.weeklyMinutes).reduce((a, b) => a + b, 0) + currentSession;
+            // Weekly
+            const weekTotal = Object.values(employeeState.weeklyData).reduce((sum, d) => sum + d.hours, 0) + currentSession;
             const weekTarget = 40 * 60;
-            const remaining = Math.max(weekTarget - weekTotal, 0);
 
             document.getElementById('weekHours').textContent = formatMinutes(weekTotal);
-            document.getElementById('remainingHours').textContent = formatMinutes(remaining);
-        }
 
-        function updateWeeklySummary() {
-            const container = document.getElementById('weeklySummary');
-            const today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-
-            container.innerHTML = days.map(day => {
-                const isToday = day === today;
-                const minutes = employeeState.weeklyMinutes[day] || 0;
-                return `
-                    <div class="day-row">
-                        <span class="day-name ${isToday ? 'today' : ''}">${capitalizeFirst(day)}${isToday ? ' (Today)' : ''}</span>
-                        <span class="day-hours">${formatMinutes(minutes)}</span>
-                    </div>
-                `;
-            }).join('');
+            // Weekly progress
+            const weekProgress = Math.min((weekTotal / weekTarget) * 100, 100);
+            document.getElementById('weekProgressPercent').textContent = Math.round(weekProgress) + '%';
+            document.getElementById('weekProgressFill').style.width = weekProgress + '%';
         }
 
         // PTO Form
@@ -1965,14 +2488,10 @@
             return `${hours}:${mins.toString().padStart(2, '0')}`;
         }
 
-        function capitalizeFirst(str) {
-            return str.charAt(0).toUpperCase() + str.slice(1);
-        }
-
-        function getStartOfWeek() {
+        function getStartOfWeek(offset = 0) {
             const now = new Date();
             const day = now.getDay();
-            const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1) + (offset * 7);
             const monday = new Date(now.setDate(diff));
             monday.setHours(0, 0, 0, 0);
             return monday;
