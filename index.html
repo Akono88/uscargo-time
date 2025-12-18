@@ -1,0 +1,2512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US Cargo Brokers - Time Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --cyan: #00D4FF;
+            --blue: #5B8FE8;
+            --purple: #B344E5;
+            --dark-bg: #1A1A2E;
+            --dark-card: #252542;
+            --dark-input: #1e1e36;
+            --gradient: linear-gradient(135deg, #00D4FF 0%, #5B8FE8 50%, #B344E5 100%);
+            --gradient-hover: linear-gradient(135deg, #00c4ef 0%, #4b7fd8 50%, #a334d5 100%);
+            --text-light: #ffffff;
+            --text-muted: #a0a0b0;
+            --success: #00d4a0;
+            --warning: #ffb347;
+            --error: #ff6b6b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background: var(--dark-bg);
+            min-height: 100vh;
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--dark-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loading-overlay.hidden { display: none; }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(0, 212, 255, 0.2);
+            border-top-color: var(--cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Login Page */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: var(--dark-card);
+            border-radius: 20px;
+            padding: 48px;
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-logo .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient);
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: white;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .login-logo h1 {
+            font-size: 24px;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-logo p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .login-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .login-form .form-label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .login-form .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--dark-input);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 10px;
+            color: var(--text-light);
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .login-form .form-input:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .login-error {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .login-error.show { display: block; }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--gradient);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Header */
+        .app-header {
+            background: var(--dark-card);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-logo {
+            width: 44px;
+            height: 44px;
+            background: var(--gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 11px;
+            color: white;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .header-title h1 {
+            font-size: 18px;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-title p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-info .name {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .user-info .role {
+            font-size: 12px;
+            color: var(--cyan);
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid rgba(255, 107, 107, 0.5);
+            color: var(--error);
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        /* Admin */
+        .admin-container {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .admin-tab {
+            padding: 12px 24px;
+            background: var(--dark-card);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .admin-tab:hover {
+            border-color: var(--cyan);
+            color: var(--text-light);
+        }
+
+        .admin-tab.active {
+            background: var(--gradient);
+            border-color: transparent;
+            color: white;
+        }
+
+        .admin-panel { display: none; }
+        .admin-panel.active { display: block; }
+
+        .card {
+            background: var(--dark-card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success { background: var(--success); color: var(--dark-bg); }
+        .btn-danger { background: var(--error); color: white; }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+        }
+
+        .btn-outline:hover { background: rgba(0, 212, 255, 0.1); }
+        .btn-sm { padding: 8px 16px; font-size: 12px; }
+
+        /* Tables */
+        .table-container { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        th {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        td { font-size: 14px; }
+        tr:hover { background: rgba(0, 212, 255, 0.03); }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-active { background: rgba(0, 212, 160, 0.2); color: var(--success); }
+        .badge-inactive { background: rgba(160, 160, 176, 0.2); color: var(--text-muted); }
+        .badge-pending { background: rgba(255, 179, 71, 0.2); color: var(--warning); }
+        .badge-approved { background: rgba(0, 212, 160, 0.2); color: var(--success); }
+        .badge-denied { background: rgba(255, 107, 107, 0.2); color: var(--error); }
+
+        .action-btns { display: flex; gap: 8px; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: var(--dark-card);
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title { font-size: 20px; font-weight: bold; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover { color: var(--text-light); }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--dark-input);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .form-select option { background: var(--dark-bg); }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 480px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+        .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+
+        /* Stats */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--dark-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar .form-input,
+        .filter-bar .form-select {
+            width: auto;
+            min-width: 150px;
+        }
+
+        /* Employee Dashboard */
+        .employee-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        .clock-section { grid-column: span 2; }
+
+        @media (max-width: 768px) {
+            .clock-section { grid-column: span 1; }
+        }
+
+        .card-title-sm {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .clock-display {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .current-time {
+            font-size: 64px;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 480px) {
+            .current-time { font-size: 42px; }
+        }
+
+        .time-status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.clocked-in {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .status-indicator.clocked-out { background: var(--text-muted); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .clock-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Session Timer Display */
+        .session-display {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 12px;
+            display: none;
+        }
+
+        .session-display.active { display: block; }
+
+        .session-timer {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--success);
+            font-family: monospace;
+        }
+
+        .session-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+
+        /* Notes Section */
+        .notes-section {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .notes-section.active { display: block; }
+
+        .notes-textarea {
+            width: 100%;
+            padding: 16px;
+            background: var(--dark-input);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 10px;
+            color: var(--text-light);
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s ease;
+        }
+
+        .notes-textarea:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .notes-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .notes-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .time-log { margin-top: 24px; }
+
+        .log-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .log-entry .type {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-entry .type.clock-in { color: var(--success); }
+        .log-entry .type.clock-out { color: var(--warning); }
+
+        .log-entry .hours {
+            color: var(--cyan);
+            font-weight: bold;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .stat-box {
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--cyan);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .progress-section { margin-top: 20px; }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* Weekly Summary Styles */
+        .weekly-summary-card {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 768px) {
+            .weekly-summary-card { grid-column: span 1; }
+        }
+
+        .week-overview {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .week-overview {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .day-card {
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .day-card.today {
+            border-color: var(--cyan);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .day-card.worked {
+            border-color: var(--success);
+        }
+
+        .day-card .day-name {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .day-card .day-hours {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text-light);
+            margin-top: 8px;
+        }
+
+        .day-card.worked .day-hours {
+            color: var(--success);
+        }
+
+        .day-card .day-status {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .week-totals {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        @media (max-width: 480px) {
+            .week-totals { grid-template-columns: 1fr; }
+        }
+
+        .week-total-item {
+            text-align: center;
+        }
+
+        .week-total-value {
+            font-size: 28px;
+            font-weight: bold;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .week-total-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        .weekly-summary { margin-top: 16px; }
+
+        .day-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .day-row:last-child { border-bottom: none; }
+
+        .day-name { font-size: 14px; color: var(--text-muted); }
+        .day-name.today { color: var(--cyan); font-weight: bold; }
+        .day-hours { font-size: 14px; font-weight: bold; }
+
+        .time-off-card { grid-column: span 2; }
+
+        @media (max-width: 768px) {
+            .time-off-card { grid-column: span 1; }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 480px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+
+        .form-group.full-width { grid-column: span 2; }
+
+        @media (max-width: 480px) {
+            .form-group.full-width { grid-column: span 1; }
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--dark-input);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .form-actions { display: flex; gap: 12px; margin-top: 8px; }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            background: var(--dark-card);
+            border-radius: 12px;
+            border-left: 4px solid var(--success);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+            max-width: 350px;
+        }
+
+        .toast.show { transform: translateX(0); }
+        .toast.error { border-left-color: var(--error); }
+
+        .toast-title { font-weight: bold; margin-bottom: 4px; }
+        .toast-message { font-size: 14px; color: var(--text-muted); }
+
+        /* Notes in table */
+        .notes-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .notes-cell:hover {
+            cursor: pointer;
+        }
+
+        .notes-preview {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .app-header { padding: 12px 16px; }
+            .header-title h1 { font-size: 16px; }
+            .admin-container, .employee-container { padding: 16px; }
+            .card { padding: 16px; }
+            .modal { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Connecting to database...</p>
+    </div>
+
+    <!-- Login View -->
+    <div id="loginView" class="view">
+        <div class="login-container">
+            <div class="login-box">
+                <div class="login-logo">
+                    <div class="logo-icon">US<br>CARGO</div>
+                    <h1>US CARGO BROKERS</h1>
+                    <p>Time Management System</p>
+                </div>
+                <div class="login-error" id="loginError">Invalid email or password</div>
+                <form class="login-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" class="form-input" placeholder="you@uscargobrokers.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin View -->
+    <div id="adminView" class="view">
+        <header class="app-header">
+            <div class="header-left">
+                <div class="header-logo">US<br>CARGO</div>
+                <div class="header-title">
+                    <h1>US CARGO BROKERS</h1>
+                    <p>Admin Dashboard</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="name" id="adminName">Administrator</div>
+                    <div class="role">Admin</div>
+                </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="admin-container">
+            <div class="admin-tabs">
+                <button class="admin-tab active" onclick="switchAdminTab('employees', this)">Employees</button>
+                <button class="admin-tab" onclick="switchAdminTab('timeEntries', this)">Time Entries</button>
+                <button class="admin-tab" onclick="switchAdminTab('weeklySummary', this)">Weekly Summary</button>
+                <button class="admin-tab" onclick="switchAdminTab('ptoRequests', this)">PTO Requests</button>
+            </div>
+
+            <!-- Employees Panel -->
+            <div id="employeesPanel" class="admin-panel active">
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="value" id="totalEmployees">0</div>
+                        <div class="label">Total Employees</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="activeToday">0</div>
+                        <div class="label">Clocked In Now</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="pendingPTO">0</div>
+                        <div class="label">Pending PTO</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="totalWeekHours">0:00</div>
+                        <div class="label">Team Hours This Week</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Employee Management</div>
+                        <button class="btn btn-primary" onclick="openAddEmployeeModal()">+ Add Employee</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Current Status</th>
+                                    <th>Hours This Week</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeesTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Entries Panel -->
+            <div id="timeEntriesPanel" class="admin-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Time Entries</div>
+                    </div>
+                    <div class="filter-bar">
+                        <select class="form-select" id="filterEmployee" onchange="loadTimeEntries()">
+                            <option value="">All Employees</option>
+                        </select>
+                        <input type="date" class="form-input" id="filterDate" onchange="loadTimeEntries()">
+                        <button class="btn btn-outline btn-sm" onclick="exportTimeEntries()">Export CSV</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Date</th>
+                                    <th>Clock In</th>
+                                    <th>Clock Out</th>
+                                    <th>Total Hours</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timeEntriesTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Summary Panel (Admin) -->
+            <div id="weeklySummaryPanel" class="admin-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Weekly Summary - All Employees</div>
+                        <div class="filter-bar" style="margin-bottom: 0;">
+                            <button class="btn btn-outline btn-sm" onclick="changeAdminWeek(-1)">← Previous Week</button>
+                            <span id="adminWeekLabel" style="padding: 8px 16px; color: var(--cyan);"></span>
+                            <button class="btn btn-outline btn-sm" onclick="changeAdminWeek(1)">Next Week →</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Mon</th>
+                                    <th>Tue</th>
+                                    <th>Wed</th>
+                                    <th>Thu</th>
+                                    <th>Fri</th>
+                                    <th>Sat</th>
+                                    <th>Sun</th>
+                                    <th>Total</th>
+                                    <th>Days Worked</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminWeeklySummaryTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PTO Requests Panel -->
+            <div id="ptoRequestsPanel" class="admin-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">PTO Requests</div>
+                    </div>
+                    <div class="filter-bar">
+                        <select class="form-select" id="filterPTOStatus" onchange="loadPTORequests()">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="denied">Denied</option>
+                        </select>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Type</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Days</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ptoRequestsTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee View -->
+    <div id="employeeView" class="view">
+        <header class="app-header">
+            <div class="header-left">
+                <div class="header-logo">US<br>CARGO</div>
+                <div class="header-title">
+                    <h1>US CARGO BROKERS</h1>
+                    <p>Employee Time Portal</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="name" id="employeeName">Employee</div>
+                    <div class="role">Employee</div>
+                </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="employee-container">
+            <div class="main-grid">
+                <div class="card clock-section">
+                    <div class="card-title-sm">Time Clock</div>
+                    <div class="clock-display">
+                        <div class="current-time" id="currentTime">00:00:00</div>
+                        <div class="time-status">
+                            <span class="status-indicator clocked-out" id="statusIndicator"></span>
+                            <span id="statusText">Clocked Out</span>
+                        </div>
+                    </div>
+
+                    <!-- Live Session Timer -->
+                    <div class="session-display" id="sessionDisplay">
+                        <div class="session-timer" id="sessionTimer">00:00:00</div>
+                        <div class="session-label">Current Session Duration</div>
+                    </div>
+
+                    <div class="clock-buttons">
+                        <button class="btn btn-primary" id="clockInBtn" onclick="clockIn()">Clock In</button>
+                        <button class="btn btn-outline" id="clockOutBtn" onclick="clockOut()" disabled>Clock Out</button>
+                    </div>
+
+                    <!-- Notes Section -->
+                    <div class="notes-section" id="notesSection">
+                        <label class="form-label">Shift Notes</label>
+                        <textarea class="notes-textarea" id="shiftNotes" placeholder="Describe tasks completed, accomplishments, or any notes for this shift..."></textarea>
+                        <div class="notes-hint">Notes will be saved when you clock out</div>
+                    </div>
+
+                    <div class="time-log" id="timeLog"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title-sm">Today's Summary</div>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value" id="todayHours">0:00</div>
+                            <div class="stat-label">Hours Today</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="sessionTime">0:00</div>
+                            <div class="stat-label">Current Session</div>
+                        </div>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-label">
+                            <span>Daily Progress (8hr goal)</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title-sm">This Week</div>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value" id="weekHours">0:00</div>
+                            <div class="stat-label">Hours This Week</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="daysWorked">0</div>
+                            <div class="stat-label">Days Worked</div>
+                        </div>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-label">
+                            <span>Weekly Progress (40hr goal)</span>
+                            <span id="weekProgressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="weekProgressFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly Summary Card -->
+                <div class="card weekly-summary-card">
+                    <div class="card-title-sm">Weekly Breakdown</div>
+                    <div class="week-overview" id="weekOverview">
+                        <!-- Days will be populated here -->
+                    </div>
+                    <div class="week-totals">
+                        <div class="week-total-item">
+                            <div class="week-total-value" id="weekTotalHours">0:00</div>
+                            <div class="week-total-label">Total Hours</div>
+                        </div>
+                        <div class="week-total-item">
+                            <div class="week-total-value" id="weekDaysWorked">0/5</div>
+                            <div class="week-total-label">Days Worked</div>
+                        </div>
+                        <div class="week-total-item">
+                            <div class="week-total-value" id="weekAvgHours">0:00</div>
+                            <div class="week-total-label">Avg Per Day</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card time-off-card">
+                    <div class="card-title-sm">Request Time Off</div>
+                    <form id="timeOffForm" onsubmit="submitTimeOff(event)">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="startDate">Start Date</label>
+                                <input type="date" id="startDate" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="endDate">End Date</label>
+                                <input type="date" id="endDate" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="timeOffType">Type</label>
+                                <select id="timeOffType" class="form-select" required>
+                                    <option value="">Select type...</option>
+                                    <option value="Vacation">Vacation</option>
+                                    <option value="Sick Leave">Sick Leave</option>
+                                    <option value="Personal Day">Personal Day</option>
+                                    <option value="Bereavement">Bereavement</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="totalDays">Total Days</label>
+                                <input type="text" id="totalDays" class="form-input" readonly placeholder="Auto-calculated">
+                            </div>
+                            <div class="form-group full-width">
+                                <label class="form-label" for="reason">Reason / Notes</label>
+                                <textarea id="reason" class="form-textarea" placeholder="Please provide any additional details..." required></textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Submit Request</button>
+                            <button type="button" class="btn btn-outline" onclick="clearPTOForm()">Clear</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Modal -->
+    <div class="modal-overlay" id="employeeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="employeeModalTitle">Add Employee</div>
+                <button class="modal-close" onclick="closeEmployeeModal()">&times;</button>
+            </div>
+            <form onsubmit="saveEmployee(event)">
+                <input type="hidden" id="editEmployeeId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name</label>
+                        <input type="text" id="empFirstName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name</label>
+                        <input type="text" id="empLastName" class="form-input" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="empEmail" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="empPassword" class="form-input" placeholder="Leave blank to keep current">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select id="empRole" class="form-select" required>
+                            <option value="employee">Employee</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="empStatus" class="form-select" required>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Save Employee</button>
+                    <button type="button" class="btn btn-outline" onclick="closeEmployeeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <div class="modal-title">Confirm Delete</div>
+                <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <p style="margin-bottom: 24px; color: var(--text-muted);" id="confirmMessage">Are you sure?</p>
+            <div class="modal-actions">
+                <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                <button class="btn btn-outline" onclick="closeConfirmModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes Modal -->
+    <div class="modal-overlay" id="notesModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <div class="modal-title">Shift Notes</div>
+                <button class="modal-close" onclick="closeNotesModal()">&times;</button>
+            </div>
+            <div id="notesModalContent" style="color: var(--text-light); white-space: pre-wrap;"></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeNotesModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <div class="toast-title" id="toastTitle">Success</div>
+        <div class="toast-message" id="toastMessage">Action completed successfully.</div>
+    </div>
+
+    <script>
+        // ============================================
+        // SUPABASE CONNECTION
+        // ============================================
+        const SUPABASE_URL = 'https://sewgseqamvlgmqxykrlw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNld2dzZXFhbXZsZ21xeHlrcmx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzODE4NjYsImV4cCI6MjA4MDk1Nzg2Nn0.QrW7ES8q-hYETOWzl1qtHnbfGoE6QqDUC3id6-nnaF8';
+        
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // State persistence keys
+        const STORAGE_KEYS = {
+            USER: 'uscargo_user',
+            CLOCK_STATE: 'uscargo_clock_state'
+        };
+
+        let currentUser = null;
+        let allEmployees = [];
+        let adminWeekOffset = 0;
+
+        let employeeState = {
+            isClockedIn: false,
+            clockInTime: null,
+            activeEntryId: null,
+            todayMinutes: 0,
+            weeklyData: {},
+            sessionInterval: null,
+            clockInterval: null
+        };
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Start clock immediately
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            // Check for saved session
+            const savedUser = localStorage.getItem(STORAGE_KEYS.USER);
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                await initializeApp();
+            } else {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                showView('loginView');
+            }
+        });
+
+        async function initializeApp() {
+            try {
+                // Verify user still exists and is active
+                const { data: user, error } = await db
+                    .from('employees')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .eq('status', 'active')
+                    .single();
+
+                if (error || !user) {
+                    logout();
+                    return;
+                }
+
+                currentUser = user;
+                localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+
+                if (currentUser.role === 'admin') {
+                    await showAdminView();
+                } else {
+                    await showEmployeeView();
+                }
+            } catch (error) {
+                console.error('Init error:', error);
+                showToast('Error', 'Failed to load data', true);
+            }
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        // ============================================
+        // AUTHENTICATION
+        // ============================================
+        async function handleLogin(event) {
+            event.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const { data, error } = await db
+                    .from('employees')
+                    .select('*')
+                    .eq('email', email)
+                    .eq('password', password)
+                    .eq('status', 'active')
+                    .single();
+
+                if (error || !data) {
+                    document.getElementById('loginError').classList.add('show');
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In';
+                    return;
+                }
+
+                currentUser = data;
+                localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data));
+                document.getElementById('loginError').classList.remove('show');
+
+                await initializeApp();
+
+            } catch (error) {
+                console.error('Login error:', error);
+                document.getElementById('loginError').classList.add('show');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Sign In';
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem(STORAGE_KEYS.USER);
+            localStorage.removeItem(STORAGE_KEYS.CLOCK_STATE);
+            stopSessionTimer();
+            employeeState = {
+                isClockedIn: false,
+                clockInTime: null,
+                activeEntryId: null,
+                todayMinutes: 0,
+                weeklyData: {},
+                sessionInterval: null,
+                clockInterval: null
+            };
+            showView('loginView');
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        // ============================================
+        // VIEW MANAGEMENT
+        // ============================================
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        async function showAdminView() {
+            showView('adminView');
+            document.getElementById('adminName').textContent = `${currentUser.first_name} ${currentUser.last_name}`;
+            await loadAdminData();
+        }
+
+        async function showEmployeeView() {
+            showView('employeeView');
+            document.getElementById('employeeName').textContent = `${currentUser.first_name} ${currentUser.last_name}`;
+            await initEmployeeView();
+        }
+
+        // ============================================
+        // ADMIN FUNCTIONS
+        // ============================================
+        async function switchAdminTab(tab, btn) {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+
+            btn.classList.add('active');
+            document.getElementById(tab + 'Panel').classList.add('active');
+
+            if (tab === 'timeEntries') await loadTimeEntries();
+            if (tab === 'ptoRequests') await loadPTORequests();
+            if (tab === 'weeklySummary') await loadAdminWeeklySummary();
+        }
+
+        async function loadAdminData() {
+            // Load all employees
+            const { data: employees } = await db
+                .from('employees')
+                .select('*')
+                .order('first_name');
+            
+            allEmployees = employees || [];
+
+            const nonAdmins = allEmployees.filter(e => e.role !== 'admin');
+            document.getElementById('totalEmployees').textContent = nonAdmins.length;
+
+            // Currently clocked in
+            const { data: activeEntries } = await db
+                .from('time_entries')
+                .select('*')
+                .is('clock_out', null);
+            
+            document.getElementById('activeToday').textContent = (activeEntries || []).length;
+
+            // Pending PTO
+            const { data: pendingPTO } = await db
+                .from('pto_requests')
+                .select('*')
+                .eq('status', 'pending');
+            
+            document.getElementById('pendingPTO').textContent = (pendingPTO || []).length;
+
+            // Total team hours this week
+            const startOfWeek = getStartOfWeek();
+            const { data: weekEntries } = await db
+                .from('time_entries')
+                .select('*')
+                .gte('clock_in', startOfWeek.toISOString())
+                .not('clock_out', 'is', null);
+
+            let totalWeekMins = 0;
+            (weekEntries || []).forEach(e => {
+                totalWeekMins += Math.floor((new Date(e.clock_out) - new Date(e.clock_in)) / 60000);
+            });
+            document.getElementById('totalWeekHours').textContent = formatMinutes(totalWeekMins);
+
+            // Render employees table with current status
+            await renderEmployeesTable(nonAdmins, activeEntries || []);
+
+            // Populate filter
+            const filterSelect = document.getElementById('filterEmployee');
+            filterSelect.innerHTML = '<option value="">All Employees</option>' +
+                nonAdmins.map(e => `<option value="${e.id}">${e.first_name} ${e.last_name}</option>`).join('');
+        }
+
+        async function renderEmployeesTable(employees, activeEntries) {
+            const tbody = document.getElementById('employeesTable');
+
+            if (employees.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No employees yet.</td></tr>';
+                return;
+            }
+
+            const startOfWeek = getStartOfWeek();
+            const { data: weekEntries } = await db
+                .from('time_entries')
+                .select('*')
+                .gte('clock_in', startOfWeek.toISOString())
+                .not('clock_out', 'is', null);
+
+            const hoursMap = {};
+            (weekEntries || []).forEach(entry => {
+                const mins = Math.floor((new Date(entry.clock_out) - new Date(entry.clock_in)) / 60000);
+                hoursMap[entry.employee_id] = (hoursMap[entry.employee_id] || 0) + mins;
+            });
+
+            const activeMap = {};
+            activeEntries.forEach(e => activeMap[e.employee_id] = e);
+
+            tbody.innerHTML = employees.map(emp => {
+                const isActive = activeMap[emp.id];
+                const activeTime = isActive ? formatMinutes(Math.floor((new Date() - new Date(isActive.clock_in)) / 60000)) : '';
+                
+                return `
+                    <tr>
+                        <td><strong>${emp.first_name} ${emp.last_name}</strong></td>
+                        <td>${emp.email}</td>
+                        <td style="text-transform:capitalize;">${emp.role}</td>
+                        <td><span class="badge badge-${emp.status}">${emp.status}</span></td>
+                        <td>${isActive ? `<span class="badge badge-active">Clocked In (${activeTime})</span>` : '<span class="badge badge-inactive">Clocked Out</span>'}</td>
+                        <td>${formatMinutes(hoursMap[emp.id] || 0)}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn btn-outline btn-sm" onclick="editEmployee(${emp.id})">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="confirmDeleteEmployee(${emp.id})">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Admin Weekly Summary
+        async function loadAdminWeeklySummary() {
+            const startOfWeek = getStartOfWeek(adminWeekOffset);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(endOfWeek.getDate() + 7);
+
+            document.getElementById('adminWeekLabel').textContent = 
+                `${startOfWeek.toLocaleDateString()} - ${new Date(endOfWeek - 1).toLocaleDateString()}`;
+
+            const nonAdmins = allEmployees.filter(e => e.role !== 'admin');
+
+            const { data: entries } = await db
+                .from('time_entries')
+                .select('*')
+                .gte('clock_in', startOfWeek.toISOString())
+                .lt('clock_in', endOfWeek.toISOString())
+                .not('clock_out', 'is', null);
+
+            // Build hours by employee and day
+            const hoursMap = {};
+            (entries || []).forEach(entry => {
+                const empId = entry.employee_id;
+                const dayOfWeek = new Date(entry.clock_in).getDay();
+                const mins = Math.floor((new Date(entry.clock_out) - new Date(entry.clock_in)) / 60000);
+                
+                if (!hoursMap[empId]) hoursMap[empId] = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+                hoursMap[empId][dayOfWeek] += mins;
+            });
+
+            const tbody = document.getElementById('adminWeeklySummaryTable');
+            
+            if (nonAdmins.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text-muted);">No employees.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = nonAdmins.map(emp => {
+                const hours = hoursMap[emp.id] || { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+                const total = Object.values(hours).reduce((a, b) => a + b, 0);
+                const daysWorked = Object.values(hours).filter(h => h > 0).length;
+
+                return `
+                    <tr>
+                        <td><strong>${emp.first_name} ${emp.last_name}</strong></td>
+                        <td>${hours[1] > 0 ? formatMinutes(hours[1]) : '-'}</td>
+                        <td>${hours[2] > 0 ? formatMinutes(hours[2]) : '-'}</td>
+                        <td>${hours[3] > 0 ? formatMinutes(hours[3]) : '-'}</td>
+                        <td>${hours[4] > 0 ? formatMinutes(hours[4]) : '-'}</td>
+                        <td>${hours[5] > 0 ? formatMinutes(hours[5]) : '-'}</td>
+                        <td>${hours[6] > 0 ? formatMinutes(hours[6]) : '-'}</td>
+                        <td>${hours[0] > 0 ? formatMinutes(hours[0]) : '-'}</td>
+                        <td style="color: var(--cyan); font-weight: bold;">${formatMinutes(total)}</td>
+                        <td>${daysWorked}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function changeAdminWeek(direction) {
+            adminWeekOffset += direction;
+            loadAdminWeeklySummary();
+        }
+
+        function openAddEmployeeModal() {
+            document.getElementById('employeeModalTitle').textContent = 'Add Employee';
+            document.getElementById('editEmployeeId').value = '';
+            document.getElementById('empFirstName').value = '';
+            document.getElementById('empLastName').value = '';
+            document.getElementById('empEmail').value = '';
+            document.getElementById('empPassword').value = '';
+            document.getElementById('empPassword').placeholder = 'Enter password';
+            document.getElementById('empRole').value = 'employee';
+            document.getElementById('empStatus').value = 'active';
+            document.getElementById('employeeModal').classList.add('show');
+        }
+
+        function editEmployee(id) {
+            const emp = allEmployees.find(e => e.id === id);
+            if (!emp) return;
+
+            document.getElementById('employeeModalTitle').textContent = 'Edit Employee';
+            document.getElementById('editEmployeeId').value = id;
+            document.getElementById('empFirstName').value = emp.first_name;
+            document.getElementById('empLastName').value = emp.last_name;
+            document.getElementById('empEmail').value = emp.email;
+            document.getElementById('empPassword').value = '';
+            document.getElementById('empPassword').placeholder = 'Leave blank to keep current';
+            document.getElementById('empRole').value = emp.role;
+            document.getElementById('empStatus').value = emp.status;
+            document.getElementById('employeeModal').classList.add('show');
+        }
+
+        function closeEmployeeModal() {
+            document.getElementById('employeeModal').classList.remove('show');
+        }
+
+        async function saveEmployee(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('editEmployeeId').value;
+            const employeeData = {
+                first_name: document.getElementById('empFirstName').value,
+                last_name: document.getElementById('empLastName').value,
+                email: document.getElementById('empEmail').value,
+                role: document.getElementById('empRole').value,
+                status: document.getElementById('empStatus').value
+            };
+
+            const password = document.getElementById('empPassword').value;
+
+            try {
+                if (id) {
+                    if (password) employeeData.password = password;
+                    
+                    const { error } = await db
+                        .from('employees')
+                        .update(employeeData)
+                        .eq('id', parseInt(id));
+
+                    if (error) throw error;
+                    showToast('Employee Updated', `${employeeData.first_name} ${employeeData.last_name} has been updated.`);
+                } else {
+                    if (!password) {
+                        showToast('Error', 'Password is required for new employees.', true);
+                        return;
+                    }
+                    employeeData.password = password;
+
+                    const { error } = await db
+                        .from('employees')
+                        .insert([employeeData]);
+
+                    if (error) throw error;
+                    showToast('Employee Added', `${employeeData.first_name} ${employeeData.last_name} has been added.`);
+                }
+
+                closeEmployeeModal();
+                await loadAdminData();
+
+            } catch (error) {
+                console.error('Save error:', error);
+                showToast('Error', error.message || 'Failed to save employee', true);
+            }
+        }
+
+        function confirmDeleteEmployee(id) {
+            const emp = allEmployees.find(e => e.id === id);
+            if (!emp) return;
+
+            document.getElementById('confirmMessage').textContent = `Are you sure you want to delete ${emp.first_name} ${emp.last_name}?`;
+            document.getElementById('confirmDeleteBtn').onclick = () => deleteEmployee(id);
+            document.getElementById('confirmModal').classList.add('show');
+        }
+
+        async function deleteEmployee(id) {
+            try {
+                const { error } = await db
+                    .from('employees')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                closeConfirmModal();
+                await loadAdminData();
+                showToast('Employee Deleted', 'Employee has been removed.');
+
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('Error', 'Failed to delete employee', true);
+            }
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+        }
+
+        // Time Entries
+        async function loadTimeEntries() {
+            const empFilter = document.getElementById('filterEmployee').value;
+            const dateFilter = document.getElementById('filterDate').value;
+
+            let query = db
+                .from('time_entries')
+                .select('*, employees(first_name, last_name)')
+                .order('clock_in', { ascending: false })
+                .limit(100);
+
+            if (empFilter) query = query.eq('employee_id', parseInt(empFilter));
+            if (dateFilter) {
+                const nextDay = new Date(dateFilter);
+                nextDay.setDate(nextDay.getDate() + 1);
+                query = query.gte('clock_in', dateFilter).lt('clock_in', nextDay.toISOString().split('T')[0]);
+            }
+
+            const { data: entries, error } = await query;
+
+            const tbody = document.getElementById('timeEntriesTable');
+
+            if (!entries || entries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No time entries found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = entries.map(entry => {
+                const empName = entry.employees ? `${entry.employees.first_name} ${entry.employees.last_name}` : 'Unknown';
+                const clockIn = new Date(entry.clock_in);
+                const clockOut = entry.clock_out ? new Date(entry.clock_out) : null;
+                const totalMins = clockOut ? Math.floor((clockOut - clockIn) / 60000) : Math.floor((new Date() - clockIn) / 60000);
+                const hasNotes = entry.notes && entry.notes.trim();
+
+                return `
+                    <tr>
+                        <td>${empName}</td>
+                        <td>${clockIn.toLocaleDateString()}</td>
+                        <td>${clockIn.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</td>
+                        <td>${clockOut ? clockOut.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : `<span class="badge badge-active">Active (${formatMinutes(totalMins)})</span>`}</td>
+                        <td>${formatMinutes(totalMins)}</td>
+                        <td class="notes-cell" ${hasNotes ? `onclick="showNotes('${encodeURIComponent(entry.notes)}')"` : ''}>
+                            ${hasNotes ? `<span class="notes-preview" title="Click to view">📝 ${entry.notes.substring(0, 30)}${entry.notes.length > 30 ? '...' : ''}</span>` : '<span style="color: var(--text-muted);">-</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function showNotes(encodedNotes) {
+            const notes = decodeURIComponent(encodedNotes);
+            document.getElementById('notesModalContent').textContent = notes;
+            document.getElementById('notesModal').classList.add('show');
+        }
+
+        function closeNotesModal() {
+            document.getElementById('notesModal').classList.remove('show');
+        }
+
+        async function exportTimeEntries() {
+            const { data: entries } = await db
+                .from('time_entries')
+                .select('*, employees(first_name, last_name)')
+                .order('clock_in', { ascending: false });
+
+            if (!entries || entries.length === 0) {
+                showToast('No Data', 'No entries to export.', true);
+                return;
+            }
+
+            const csv = [
+                ['Employee', 'Date', 'Clock In', 'Clock Out', 'Total Hours', 'Notes'].join(','),
+                ...entries.map(entry => {
+                    const empName = entry.employees ? `${entry.employees.first_name} ${entry.employees.last_name}` : 'Unknown';
+                    const clockIn = new Date(entry.clock_in);
+                    const clockOut = entry.clock_out ? new Date(entry.clock_out) : null;
+                    const totalMins = clockOut ? Math.floor((clockOut - clockIn) / 60000) : 0;
+
+                    return [
+                        `"${empName}"`,
+                        clockIn.toLocaleDateString(),
+                        clockIn.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+                        clockOut ? clockOut.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : 'Active',
+                        clockOut ? formatMinutes(totalMins) : '-',
+                        `"${(entry.notes || '').replace(/"/g, '""')}"`
+                    ].join(',');
+                })
+            ].join('\n');
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `time_entries_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            showToast('Export Complete', 'Time entries downloaded as CSV.');
+        }
+
+        // PTO Requests
+        async function loadPTORequests() {
+            const statusFilter = document.getElementById('filterPTOStatus').value;
+
+            let query = db
+                .from('pto_requests')
+                .select('*, employees(first_name, last_name)')
+                .order('submitted_at', { ascending: false });
+
+            if (statusFilter) query = query.eq('status', statusFilter);
+
+            const { data: requests } = await query;
+
+            const tbody = document.getElementById('ptoRequestsTable');
+
+            if (!requests || requests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted);">No PTO requests found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = requests.map(req => {
+                const empName = req.employees ? `${req.employees.first_name} ${req.employees.last_name}` : 'Unknown';
+
+                return `
+                    <tr>
+                        <td>${empName}</td>
+                        <td>${req.type}</td>
+                        <td>${new Date(req.start_date).toLocaleDateString()}</td>
+                        <td>${new Date(req.end_date).toLocaleDateString()}</td>
+                        <td>${req.days}</td>
+                        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${req.reason}">${req.reason || '-'}</td>
+                        <td><span class="badge badge-${req.status}">${req.status}</span></td>
+                        <td>
+                            ${req.status === 'pending' ? `
+                                <div class="action-btns">
+                                    <button class="btn btn-success btn-sm" onclick="updatePTOStatus(${req.id}, 'approved')">Approve</button>
+                                    <button class="btn btn-danger btn-sm" onclick="updatePTOStatus(${req.id}, 'denied')">Deny</button>
+                                </div>
+                            ` : '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function updatePTOStatus(id, status) {
+            try {
+                const { error } = await db
+                    .from('pto_requests')
+                    .update({ status })
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                await loadPTORequests();
+                await loadAdminData();
+                showToast('PTO Updated', `Request has been ${status}.`);
+
+            } catch (error) {
+                console.error('Update error:', error);
+                showToast('Error', 'Failed to update request', true);
+            }
+        }
+
+        // ============================================
+        // EMPLOYEE FUNCTIONS
+        // ============================================
+        async function initEmployeeView() {
+            await loadEmployeeData();
+            updateWeeklyOverview();
+            setMinDates();
+
+            document.getElementById('startDate').addEventListener('change', calculateDays);
+            document.getElementById('endDate').addEventListener('change', calculateDays);
+        }
+
+        async function loadEmployeeData() {
+            const today = new Date().toISOString().split('T')[0];
+
+            // Get today's entries
+            const { data: todayEntries } = await db
+                .from('time_entries')
+                .select('*')
+                .eq('employee_id', currentUser.id)
+                .gte('clock_in', today)
+                .order('clock_in', { ascending: true });
+
+            // Check for active entry (both from DB and local state)
+            const activeEntry = (todayEntries || []).find(e => !e.clock_out);
+            
+            // Also check local storage for reliability
+            const savedState = localStorage.getItem(STORAGE_KEYS.CLOCK_STATE);
+            let localState = savedState ? JSON.parse(savedState) : null;
+
+            if (activeEntry) {
+                employeeState.isClockedIn = true;
+                employeeState.clockInTime = new Date(activeEntry.clock_in);
+                employeeState.activeEntryId = activeEntry.id;
+                
+                // Save to local storage for persistence
+                localStorage.setItem(STORAGE_KEYS.CLOCK_STATE, JSON.stringify({
+                    isClockedIn: true,
+                    clockInTime: activeEntry.clock_in,
+                    activeEntryId: activeEntry.id,
+                    odayId: currentUser.id
+                }));
+
+                updateClockStatus(true);
+                startSessionTimer();
+            } else if (localState && localState.isClockedIn && localState.odayId === currentUser.id) {
+                // Check if local state is stale (entry was clocked out elsewhere)
+                const { data: checkEntry } = await db
+                    .from('time_entries')
+                    .select('*')
+                    .eq('id', localState.activeEntryId)
+                    .single();
+
+                if (checkEntry && !checkEntry.clock_out) {
+                    employeeState.isClockedIn = true;
+                    employeeState.clockInTime = new Date(localState.clockInTime);
+                    employeeState.activeEntryId = localState.activeEntryId;
+                    updateClockStatus(true);
+                    startSessionTimer();
+                } else {
+                    // Clean up stale state
+                    localStorage.removeItem(STORAGE_KEYS.CLOCK_STATE);
+                    updateClockStatus(false);
+                }
+            } else {
+                updateClockStatus(false);
+            }
+
+            // Calculate today's completed minutes
+            employeeState.todayMinutes = (todayEntries || [])
+                .filter(e => e.clock_out)
+                .reduce((sum, e) => sum + Math.floor((new Date(e.clock_out) - new Date(e.clock_in)) / 60000), 0);
+
+            // Render log
+            const logContainer = document.getElementById('timeLog');
+            logContainer.innerHTML = '';
+            (todayEntries || []).forEach(entry => {
+                const clockIn = new Date(entry.clock_in);
+                const clockOut = entry.clock_out ? new Date(entry.clock_out) : null;
+                const duration = clockOut ? Math.floor((clockOut - clockIn) / 60000) : null;
+                addLogEntryToDOM('in', clockIn);
+                if (clockOut) {
+                    addLogEntryToDOM('out', clockOut, duration);
+                }
+            });
+
+            // Weekly data
+            await calculateWeeklyData();
+            updateStats();
+        }
+
+        async function calculateWeeklyData() {
+            const startOfWeek = getStartOfWeek();
+            
+            const { data: weekEntries } = await db
+                .from('time_entries')
+                .select('*')
+                .eq('employee_id', currentUser.id)
+                .gte('clock_in', startOfWeek.toISOString())
+                .not('clock_out', 'is', null);
+
+            // Reset weekly data
+            employeeState.weeklyData = {
+                0: { hours: 0, worked: false }, // Sunday
+                1: { hours: 0, worked: false }, // Monday
+                2: { hours: 0, worked: false },
+                3: { hours: 0, worked: false },
+                4: { hours: 0, worked: false },
+                5: { hours: 0, worked: false },
+                6: { hours: 0, worked: false }  // Saturday
+            };
+
+            (weekEntries || []).forEach(e => {
+                const day = new Date(e.clock_in).getDay();
+                const mins = Math.floor((new Date(e.clock_out) - new Date(e.clock_in)) / 60000);
+                employeeState.weeklyData[day].hours += mins;
+                employeeState.weeklyData[day].worked = true;
+            });
+        }
+
+        function updateWeeklyOverview() {
+            const container = document.getElementById('weekOverview');
+            const today = new Date().getDay();
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const workDays = [1, 2, 3, 4, 5]; // Mon-Fri
+
+            container.innerHTML = workDays.map(dayNum => {
+                const data = employeeState.weeklyData[dayNum] || { hours: 0, worked: false };
+                const isToday = dayNum === today;
+                const worked = data.hours > 0;
+
+                return `
+                    <div class="day-card ${isToday ? 'today' : ''} ${worked ? 'worked' : ''}">
+                        <div class="day-name">${dayNames[dayNum]}</div>
+                        <div class="day-hours">${worked ? formatMinutes(data.hours) : '-'}</div>
+                        <div class="day-status">${isToday ? 'Today' : (worked ? '✓' : '')}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Update totals
+            const totalMins = Object.values(employeeState.weeklyData).reduce((sum, d) => sum + d.hours, 0);
+            const daysWorked = Object.values(employeeState.weeklyData).filter(d => d.worked).length;
+            const avgMins = daysWorked > 0 ? Math.round(totalMins / daysWorked) : 0;
+
+            document.getElementById('weekTotalHours').textContent = formatMinutes(totalMins);
+            document.getElementById('weekDaysWorked').textContent = `${daysWorked}/5`;
+            document.getElementById('weekAvgHours').textContent = formatMinutes(avgMins);
+            document.getElementById('daysWorked').textContent = daysWorked;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const el = document.getElementById('currentTime');
+            if (el) el.textContent = timeStr;
+        }
+
+        async function clockIn() {
+            if (employeeState.isClockedIn) return;
+
+            const clockInBtn = document.getElementById('clockInBtn');
+            clockInBtn.disabled = true;
+            clockInBtn.textContent = 'Clocking In...';
+
+            try {
+                const now = new Date();
+
+                const { data, error } = await db
+                    .from('time_entries')
+                    .insert([{
+                        employee_id: currentUser.id,
+                        clock_in: now.toISOString()
+                    }])
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                employeeState.isClockedIn = true;
+                employeeState.clockInTime = now;
+                employeeState.activeEntryId = data.id;
+
+                // Save to localStorage for persistence
+                localStorage.setItem(STORAGE_KEYS.CLOCK_STATE, JSON.stringify({
+                    isClockedIn: true,
+                    clockInTime: now.toISOString(),
+                    activeEntryId: data.id,
+                    odayId: currentUser.id
+                }));
+
+                updateClockStatus(true);
+                addLogEntryToDOM('in', now);
+                startSessionTimer();
+
+                showToast('Clocked In', `You clocked in at ${formatTime(now)}`);
+
+            } catch (error) {
+                console.error('Clock in error:', error);
+                showToast('Error', 'Failed to clock in. Please try again.', true);
+            }
+
+            clockInBtn.disabled = false;
+            clockInBtn.textContent = 'Clock In';
+        }
+
+        async function clockOut() {
+            if (!employeeState.isClockedIn) return;
+
+            const clockOutBtn = document.getElementById('clockOutBtn');
+            clockOutBtn.disabled = true;
+            clockOutBtn.textContent = 'Clocking Out...';
+
+            try {
+                const now = new Date();
+                const notes = document.getElementById('shiftNotes').value.trim();
+
+                const { error } = await db
+                    .from('time_entries')
+                    .update({ 
+                        clock_out: now.toISOString(),
+                        notes: notes || null
+                    })
+                    .eq('id', employeeState.activeEntryId);
+
+                if (error) throw error;
+
+                const sessionMinutes = Math.floor((now - employeeState.clockInTime) / 60000);
+                employeeState.todayMinutes += sessionMinutes;
+
+                const dayOfWeek = now.getDay();
+                if (!employeeState.weeklyData[dayOfWeek]) {
+                    employeeState.weeklyData[dayOfWeek] = { hours: 0, worked: false };
+                }
+                employeeState.weeklyData[dayOfWeek].hours += sessionMinutes;
+                employeeState.weeklyData[dayOfWeek].worked = true;
+
+                employeeState.isClockedIn = false;
+                employeeState.clockInTime = null;
+                employeeState.activeEntryId = null;
+
+                // Clear local storage
+                localStorage.removeItem(STORAGE_KEYS.CLOCK_STATE);
+
+                // Clear notes
+                document.getElementById('shiftNotes').value = '';
+
+                updateClockStatus(false);
+                addLogEntryToDOM('out', now, sessionMinutes);
+                stopSessionTimer();
+                updateStats();
+                updateWeeklyOverview();
+
+                showToast('Clocked Out', `Session: ${formatMinutes(sessionMinutes)}. Total today: ${formatMinutes(employeeState.todayMinutes)}`);
+
+            } catch (error) {
+                console.error('Clock out error:', error);
+                showToast('Error', 'Failed to clock out. Please try again.', true);
+            }
+
+            clockOutBtn.disabled = false;
+            clockOutBtn.textContent = 'Clock Out';
+        }
+
+        function updateClockStatus(isClockedIn) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            const clockInBtn = document.getElementById('clockInBtn');
+            const clockOutBtn = document.getElementById('clockOutBtn');
+            const sessionDisplay = document.getElementById('sessionDisplay');
+            const notesSection = document.getElementById('notesSection');
+
+            if (isClockedIn) {
+                indicator.classList.add('clocked-in');
+                indicator.classList.remove('clocked-out');
+                statusText.textContent = 'Currently Clocked In';
+                statusText.style.color = 'var(--success)';
+                clockInBtn.disabled = true;
+                clockOutBtn.disabled = false;
+                sessionDisplay.classList.add('active');
+                notesSection.classList.add('active');
+            } else {
+                indicator.classList.remove('clocked-in');
+                indicator.classList.add('clocked-out');
+                statusText.textContent = 'Clocked Out';
+                statusText.style.color = 'var(--text-muted)';
+                clockInBtn.disabled = false;
+                clockOutBtn.disabled = true;
+                sessionDisplay.classList.remove('active');
+                notesSection.classList.remove('active');
+            }
+        }
+
+        function addLogEntryToDOM(type, time, duration = null) {
+            const logContainer = document.getElementById('timeLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            let durationHtml = '';
+            if (type === 'out' && duration !== null) {
+                durationHtml = `<span class="hours">${formatMinutes(duration)}</span>`;
+            }
+
+            entry.innerHTML = `
+                <div class="type ${type === 'in' ? 'clock-in' : 'clock-out'}">
+                    ${type === 'in' ? '▶' : '■'} ${type === 'in' ? 'Clocked In' : 'Clocked Out'}
+                </div>
+                <div>
+                    ${durationHtml}
+                    <span class="time" style="margin-left: 12px;">${formatTime(time)}</span>
+                </div>
+            `;
+            logContainer.insertBefore(entry, logContainer.firstChild);
+        }
+
+        function startSessionTimer() {
+            updateSessionTime();
+            employeeState.sessionInterval = setInterval(updateSessionTime, 1000);
+        }
+
+        function stopSessionTimer() {
+            if (employeeState.sessionInterval) {
+                clearInterval(employeeState.sessionInterval);
+                employeeState.sessionInterval = null;
+            }
+            document.getElementById('sessionTime').textContent = '0:00';
+            document.getElementById('sessionTimer').textContent = '00:00:00';
+        }
+
+        function updateSessionTime() {
+            if (!employeeState.clockInTime) return;
+
+            const now = new Date();
+            const diffMs = now - employeeState.clockInTime;
+            const sessionMinutes = Math.floor(diffMs / 60000);
+            
+            // Update small stat
+            document.getElementById('sessionTime').textContent = formatMinutes(sessionMinutes);
+            
+            // Update large timer display (HH:MM:SS format)
+            const hours = Math.floor(diffMs / 3600000);
+            const mins = Math.floor((diffMs % 3600000) / 60000);
+            const secs = Math.floor((diffMs % 60000) / 1000);
+            document.getElementById('sessionTimer').textContent = 
+                `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+            updateStats(sessionMinutes);
+        }
+
+        function updateStats(currentSession = 0) {
+            const totalToday = employeeState.todayMinutes + currentSession;
+            const targetMinutes = 8 * 60;
+
+            document.getElementById('todayHours').textContent = formatMinutes(totalToday);
+
+            // Daily progress
+            const progress = Math.min((totalToday / targetMinutes) * 100, 100);
+            document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            // Weekly
+            const weekTotal = Object.values(employeeState.weeklyData).reduce((sum, d) => sum + d.hours, 0) + currentSession;
+            const weekTarget = 40 * 60;
+
+            document.getElementById('weekHours').textContent = formatMinutes(weekTotal);
+
+            // Weekly progress
+            const weekProgress = Math.min((weekTotal / weekTarget) * 100, 100);
+            document.getElementById('weekProgressPercent').textContent = Math.round(weekProgress) + '%';
+            document.getElementById('weekProgressFill').style.width = weekProgress + '%';
+        }
+
+        // PTO Form
+        function setMinDates() {
+            const today = new Date().toISOString().split('T')[0];
+            const startDate = document.getElementById('startDate');
+            const endDate = document.getElementById('endDate');
+            if (startDate) startDate.min = today;
+            if (endDate) endDate.min = today;
+        }
+
+        function calculateDays() {
+            const start = document.getElementById('startDate').value;
+            const end = document.getElementById('endDate').value;
+
+            if (start && end) {
+                const diffDays = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24)) + 1;
+                document.getElementById('totalDays').value = diffDays > 0 ? diffDays + ' day' + (diffDays > 1 ? 's' : '') : 'Invalid range';
+            }
+        }
+
+        async function submitTimeOff(event) {
+            event.preventDefault();
+
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const days = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
+
+            try {
+                const { error } = await db
+                    .from('pto_requests')
+                    .insert([{
+                        employee_id: currentUser.id,
+                        start_date: startDate,
+                        end_date: endDate,
+                        type: document.getElementById('timeOffType').value,
+                        days: days,
+                        reason: document.getElementById('reason').value,
+                        status: 'pending'
+                    }]);
+
+                if (error) throw error;
+
+                showToast('Request Submitted', 'Your time off request has been submitted for review.');
+                clearPTOForm();
+
+            } catch (error) {
+                console.error('PTO submit error:', error);
+                showToast('Error', 'Failed to submit request', true);
+            }
+        }
+
+        function clearPTOForm() {
+            document.getElementById('timeOffForm').reset();
+            document.getElementById('totalDays').value = '';
+        }
+
+        // ============================================
+        // UTILITIES
+        // ============================================
+        function formatTime(date) {
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+
+        function formatMinutes(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours}:${mins.toString().padStart(2, '0')}`;
+        }
+
+        function getStartOfWeek(offset = 0) {
+            const now = new Date();
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1) + (offset * 7);
+            const monday = new Date(now.setDate(diff));
+            monday.setHours(0, 0, 0, 0);
+            return monday;
+        }
+
+        function showToast(title, message, isError = false) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMessage').textContent = message;
+
+            toast.classList.toggle('error', isError);
+            toast.classList.add('show');
+
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+    </script>
+</body>
+</html>
